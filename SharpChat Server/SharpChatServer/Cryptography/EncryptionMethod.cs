@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpChatServer.Cryptography
+namespace ChatThreadTest.Cryptography
 {
-    public enum EncryptionMethod
+    internal enum EncryptionMethod
     {
         NONE = 0,
         RSA = 1,

@@ -1,6 +1,6 @@
-﻿namespace SharpChatServer
+﻿namespace ChatThreadTest
 {
-    public class ThreadStats
+    internal class ThreadStats
     {
         public long executionTime { get; set; }
         public int numberOfHandlers { get; set; }
@@ -15,24 +15,24 @@
         public ThreadStats(string threadName, int threadID)
         {
             this.threadName = threadName;
-            numberOfHandlers = 0;
-            waitTime = 0;
-            executionTime = 0;
-            threadManagementTime = 0;
-            lastExecutionTimes = new() { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            this.numberOfHandlers = 0;
+            this.waitTime = 0;
+            this.executionTime = 0;
+            this.threadManagementTime = 0;
+            this.lastExecutionTimes = new() { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             this.threadID = threadID;
         }
 
         public override string? ToString()
         {
-            return
-                "Thread : " + threadName.ToString().PadLeft(2, ' ') +
-                " | Handlers : " + numberOfHandlers.ToString().PadLeft(3, ' ') +
-                " | Execution Time Last/Avg: " + executionTime.ToString().PadLeft(4, ' ') + "ms /" + averageExecutionTime.ToString().PadLeft(4, ' ') + "ms" +
-                " | Wait Time : " + waitTime.ToString().PadLeft(4, ' ') + "ms" +
-                " | Overhead : " + threadManagementTime + "ms" +
-                " | Via : " + viability
-
+            return 
+                "Thread : " + this.threadName.ToString().PadLeft(2, ' ') +
+                " | Handlers : " + this.numberOfHandlers.ToString().PadLeft(3, ' ') +
+                " | Execution Time Last/Avg: " + this.executionTime.ToString().PadLeft(4, ' ') + "ms /" + this.averageExecutionTime.ToString().PadLeft(4, ' ') + "ms" +
+                " | Wait Time : " + this.waitTime.ToString().PadLeft(4, ' ') + "ms" +
+                " | Overhead : " + this.threadManagementTime + "ms" +
+                " | Via : " + this.viability
+                
                 ;
         }
     }

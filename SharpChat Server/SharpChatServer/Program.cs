@@ -1,6 +1,6 @@
-﻿using SharpChatServer.Networking;
+﻿using ChatThreadTest.Networking;
 
-namespace SharpChatServer
+namespace ChatThreadTest
 {
     internal class Program
     {

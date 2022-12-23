@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpChatServer
+namespace ChatThreadTest
 {
     public class ChatManager
     {
@@ -96,7 +96,7 @@ namespace SharpChatServer
         /// <returns></returns>
         public bool Add(string senderName, string message, long timestamp, long tolerance)
         {
-            if (timestamp > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + tolerance || timestamp < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - tolerance)
+            if (timestamp > (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + tolerance) || timestamp < (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - tolerance))
             {
                 return false;
             }
