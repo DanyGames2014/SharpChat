@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace SharpChatClient
 {
@@ -16,10 +17,12 @@ namespace SharpChatClient
         NetworkStream ns;
         StreamReader sr;
         StreamWriter sw;
+        List<Packet> messageBuffer;
 
         // State
-        ConnectionState state = ConnectionState.HANDSHAKE_ENC_CHOOSE;
+        ConnectionState state;
         bool run = true;
+        bool auth = false;
 
         // User Details
         public string username = "pablo";
@@ -33,14 +36,31 @@ namespace SharpChatClient
         {
             encryptionMethod = EncryptionMethod.RSA;
 
-            encryptionProvider = new(encryptionMethod, this);
+            encryptionProvider = new(this);
 
-            state = ConnectionState.HANDSHAKE_ENC_CHOOSE;
+            state = ConnectionState.HANDSHAKE;
+
+            messageBuffer = new List<Packet>();
         }
 
         public void Send(Packet packet)
         {
-            sw.WriteLine(encryptionProvider.Encrypt(packet));
+            messageBuffer.Add(packet);
+
+            SendBuffer();
+        }
+
+        public void SendBuffer()
+        {
+            if (tcpClient.Connected)
+            {
+                foreach (var item in messageBuffer)
+                {
+                    sw.WriteLine(item.Serialize());
+                    sw.Flush();
+                }
+                messageBuffer.Clear();
+            }
         }
 
         public void Run()
@@ -52,57 +72,91 @@ namespace SharpChatClient
                 {
                     switch (state)
                     {
-                        case ConnectionState.HANDSHAKE_ENC_CHOOSE:
-                            sw.WriteLine((int)encryptionMethod);
-                            state = ConnectionState.HANDSHAKE_KEY_EXCHANGE;
-                            break;
-
-                        case ConnectionState.HANDSHAKE_KEY_EXCHANGE:
-                            using (var packet = new Packet(PacketType.RECEIVE_CLIENT_PUBLIC_KEY, "", encryptionProvider.ClientPublicKey, 0))
-                            {
-                                Send(packet);
-                            }
-                            state = ConnectionState.LOGIN_SEND_USERNAME;
-                            break;
-
-                        case ConnectionState.LOGIN_SEND_USERNAME:
-                            using (var packet = new Packet(PacketType.CLIENT_USERNAME,"",username, 0))
-                            {
-                                Send(packet);
-                            }
-                            state = ConnectionState.LOGIN_SEND_PASSWORD;
-                            break;
-
-                        case ConnectionState.LOGIN_SEND_PASSWORD:
-                            using (var packet = new Packet(PacketType.CLIENT_PASSWORD, "", password, 0))
-                            {
-                                Send(packet);
-                            }
-                            state = ConnectionState.GET_AUTH_RESULT;
-                            break;
-
-                        case ConnectionState.GET_AUTH_RESULT:
-                            state = ConnectionState.GET_CHAT_HISTORY;
-                            break;
-
-                        case ConnectionState.GET_CHAT_HISTORY:
+                        case ConnectionState.HANDSHAKE:
+                            sw.WriteLine("no");
                             state = ConnectionState.CONNECTED;
                             break;
 
                         case ConnectionState.CONNECTED:
-                            using (var packet = new Packet(PacketType.MESSAGE, username, "TestMessage", 0))
+                            // If Data from server is avalible, handle that first
+                            while (ns.DataAvailable)
                             {
-                                Send(packet);
+                                // Read the message
+                                var message = sr.ReadLine();
+                                Packet packet;
+
+                                // Try to parse the message as a Serialized Packet
+                                try
+                                {
+                                    packet = Packet.Deserialize(message);
+
+                                    switch (packet.packetType)
+                                    {
+                                        case PacketType.PUBLIC_KEY_REQUEST:
+                                            using (var tempPacket = new Packet(PacketType.PUBLIC_KEY))
+                                            {
+                                                tempPacket.addData("publicKey", encryptionProvider.LocalPublicKey);
+                                                Send(tempPacket);
+                                            }
+                                            break;
+
+                                        case PacketType.PUBLIC_KEY:
+                                            encryptionProvider.RemotePublicKey = packet.getData("publicKey");
+                                            break;
+
+                                        case PacketType.REQUEST_AUTH:
+                                            using (var tempPacket = new Packet(PacketType.AUTH))
+                                            {
+                                                tempPacket.addData("username", username);
+                                                tempPacket.addData("password", password);
+                                                encryptionProvider.Encrypt(tempPacket);
+                                                Send(tempPacket);
+                                            }
+                                            break;
+
+                                        case PacketType.AUTH_RESULT:
+                                            using (var temp = packet)
+                                            {
+                                                var result = Convert.ToBoolean(packet.getData("result"));
+                                                auth = result;
+                                            }
+                                            break;
+
+                                        case PacketType.CHAT_WELCOME:
+                                            using (var tempPacket = new Packet(PacketType.GET_MESSAGE_SINCE))
+                                            {
+                                                tempPacket.addData("timestamp", "0");
+                                                Console.WriteLine(packet.getData("motd"));
+                                                Send(tempPacket);
+                                            }
+                                            break;
+
+                                        case PacketType.MESSAGE:
+                                            using (var tempPacket = encryptionProvider.Decrypt(packet))
+                                            {
+                                                Console.WriteLine(tempPacket.getData("message"));
+                                            }
+                                            break;
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    // If the parsing fails, it is probably a plain text message meant for dumb terminals, we ignore that.
+                                }
                             }
                             break;
+
+                        default:
+                            break;
                     }
+                    
                 }
                 catch (IOException ex)
                 {
                     while (!tcpClient.Connected)
                     {
                         Console.WriteLine("Connection Fail, Retrying");
-                        state = ConnectionState.HANDSHAKE_ENC_CHOOSE;
+                        state = ConnectionState.HANDSHAKE;
                         Thread.Sleep(5000);
                         Connect(false);
                     }
