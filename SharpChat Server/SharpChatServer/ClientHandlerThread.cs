@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ChatThreadTest
+namespace SharpChatServer
 {
     internal class ClientHandlerThread
     {
@@ -14,11 +14,11 @@ namespace ChatThreadTest
 
         public ClientHandlerThread(ThreadManager threadManager, ThreadStats threadStats)
         {
-            this.clientHandlers = new List<ClientHandler>();
-            this.stopwatch = new Stopwatch();
+            clientHandlers = new List<ClientHandler>();
+            stopwatch = new Stopwatch();
             this.threadManager = threadManager;
             this.threadStats = threadStats;
-            this.threadID = threadStats.threadID;
+            threadID = threadStats.threadID;
         }
 
         public void Cleanup()
@@ -57,7 +57,7 @@ namespace ChatThreadTest
                 Cleanup();
 
                 // Calculate Wait Time from the last execution time
-                waitTime = Math.Clamp(threadManager.targetMillisecondsMinimum - lastExecutionMilliseconds, 0, (threadManager.targetMillisecondsMinimum));
+                waitTime = Math.Clamp(threadManager.targetMillisecondsMinimum - lastExecutionMilliseconds, 0, threadManager.targetMillisecondsMinimum);
 
                 // Write Thread Stats
                 lock (threadStats)
@@ -82,15 +82,15 @@ namespace ChatThreadTest
                         threadStats.viability =
                             // Average Execution time compared to target, The lower the value, the higher the load compared to target
                             // Weight = 0.7
-                            (Math.Clamp((threadManager.targetMillisecondsMinimum / (threadStats.averageExecutionTime)), 0, 1) * 0.7f) +
+                            Math.Clamp(threadManager.targetMillisecondsMinimum / threadStats.averageExecutionTime, 0, 1) * 0.7f +
 
                             // Number of clients the thread is handling compared to the supposed maximum it should
                             // Weight = 0.2
-                            (Math.Clamp((threadManager.maximumClientsPerThread / (threadStats.numberOfHandlers)), 0, 1) * 0.2f) +
+                            Math.Clamp(threadManager.maximumClientsPerThread / threadStats.numberOfHandlers, 0, 1) * 0.2f +
 
                             // Last execution compared to average
                             // Weight = 0.1
-                            (Math.Clamp((threadStats.averageExecutionTime / (threadStats.executionTime)), 0, 1) * 0.1f)
+                            Math.Clamp(threadStats.averageExecutionTime / threadStats.executionTime, 0, 1) * 0.1f
                         ;
                     }
                 }

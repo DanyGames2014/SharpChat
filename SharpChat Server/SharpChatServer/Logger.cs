@@ -1,8 +1,8 @@
 ﻿using System.Configuration;
 
-namespace ChatThreadTest
+namespace SharpChatServer
 {
-    internal enum LogLevel
+    public enum LogLevel
     {
         DEBUG = 0,
         INFO = 1,
@@ -14,7 +14,7 @@ namespace ChatThreadTest
     /// <summary>
     /// Standard class to log messages in terminal and into a file
     /// </summary>
-    internal class Logger
+    public class Logger
     {
         private string datenow;
         private string logPath;
@@ -31,7 +31,7 @@ namespace ChatThreadTest
             try
             {
                 FileLogLevel = (LogLevel)Enum.Parse(typeof(LogLevel), (ConfigurationManager.AppSettings.Get("LogFileLogLevel") + "").ToUpper());
-                ConsoleLogLevel = (LogLevel)Enum.Parse(typeof(LogLevel), (ConfigurationManager.AppSettings.Get("ConsoleLogLevel")+"").ToUpper());
+                ConsoleLogLevel = (LogLevel)Enum.Parse(typeof(LogLevel), (ConfigurationManager.AppSettings.Get("ConsoleLogLevel") + "").ToUpper());
             }
             catch (Exception e)
             {
@@ -199,7 +199,7 @@ namespace ChatThreadTest
             {
                 case LogLevel.DEBUG:
                     logmsg += "[DEBUG] ";
-                    Console.ForegroundColor= ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.Gray;
                     break;
 
                 case LogLevel.INFO:
@@ -223,16 +223,16 @@ namespace ChatThreadTest
                     break;
             }
             logmsg += message;
-            if(level >= ConsoleLogLevel)
+            if (level >= ConsoleLogLevel)
             {
                 Console.WriteLine(logmsg);
             }
             Console.ForegroundColor = ConsoleColor.White;
 
             // Log Into Log File
-            if (log&& sw != null)
+            if (log && sw != null)
             {
-                if(level >= FileLogLevel)
+                if (level >= FileLogLevel)
                 {
                     sw.WriteLine(logmsg);
                 }

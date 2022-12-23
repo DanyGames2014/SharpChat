@@ -1,5 +1,5 @@
-using ChatThreadTest.Cryptography;
-using ChatThreadTest.Networking;
+using SharpChatServer.Cryptography;
+using SharpChatServer.Networking;
 using System.Security.Cryptography;
 
 namespace ChatUnitTest
@@ -71,14 +71,14 @@ namespace ChatUnitTest
         public void RsaEncryptionAndDecryption()
         {
             RSACryptoServiceProvider cryptoServiceProvider = new RSACryptoServiceProvider(2048);
-            string PrivateKey = ChatThreadTest.Cryptography.RSA.GetKeyString(cryptoServiceProvider.ExportParameters(true));
-            string PublicKey = ChatThreadTest.Cryptography.RSA.GetKeyString(cryptoServiceProvider.ExportParameters(false));
+            string PrivateKey = SharpChatServer.Cryptography.RSA.GetKeyString(cryptoServiceProvider.ExportParameters(true));
+            string PublicKey = SharpChatServer.Cryptography.RSA.GetKeyString(cryptoServiceProvider.ExportParameters(false));
 
             string testMessage = "A testing message to test the functionality of RSA Encryption and Decryption";
 
-            string encrypted = ChatThreadTest.Cryptography.RSA.EncryptRSA(testMessage,PublicKey);
+            string encrypted = SharpChatServer.Cryptography.RSA.EncryptRSA(testMessage,PublicKey);
 
-            string decrypted = ChatThreadTest.Cryptography.RSA.DecryptRSA(encrypted, PrivateKey);
+            string decrypted = SharpChatServer.Cryptography.RSA.DecryptRSA(encrypted, PrivateKey);
 
             Assert.AreEqual(testMessage,decrypted);
         }

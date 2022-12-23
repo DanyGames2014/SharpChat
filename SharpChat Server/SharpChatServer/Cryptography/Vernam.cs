@@ -1,4 +1,4 @@
-﻿namespace ChatThreadTest.Cryptography
+﻿namespace SharpChatServer.Cryptography
 {
     public static class Vernam
     {
@@ -28,7 +28,7 @@
             // Encode Chars
             for (int i = 0; i < toEncode.Length; i++)
             {
-                encoded[i] = (char)((char)toEncode[i] + (char)key[i]);
+                encoded[i] = (char)(toEncode[i] + (char)key[i]);
             }
 
             // Encode Keys to String
@@ -47,7 +47,7 @@
             // Init Arrays
             string[] KeyString = toDecipher.Key.Split(";");
 
-            char[] key = new char[KeyString.Length-1];
+            char[] key = new char[KeyString.Length - 1];
 
             for (int i = 0; i < key.Length; i++)
             {

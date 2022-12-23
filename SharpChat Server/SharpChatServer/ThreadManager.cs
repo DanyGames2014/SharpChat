@@ -1,9 +1,9 @@
 ﻿using System.Configuration;
 using System.Net.Sockets;
 
-namespace ChatThreadTest
+namespace SharpChatServer
 {
-    internal enum EnforceLevel
+    public enum EnforceLevel
     {
         NONE = 0,
         LIGHT = 1,
@@ -11,7 +11,7 @@ namespace ChatThreadTest
         MAXIMUM = 3
     }
 
-    internal class ThreadManager
+    public class ThreadManager
     {
         Server server;
         Logger logger;
@@ -23,7 +23,7 @@ namespace ChatThreadTest
         public long targetMillisecondsMinimum;
         public long targetMillisecondsMaximum;
 
-        public int maximumClients; 
+        public int maximumClients;
         public int maximumClientsPerThread;
         public EnforceLevel enforceLevel;
 
@@ -37,7 +37,7 @@ namespace ChatThreadTest
 
             // References to Server Instance
             this.server = server;
-            this.logger = server.logger;
+            logger = server.logger;
 
             // Initialize Threads according to App.Config
             int threadCount = 1;
@@ -55,16 +55,17 @@ namespace ChatThreadTest
             }
             finally
             {
-                if (threadCount == 0) {
+                if (threadCount == 0)
+                {
                     threadCount = Environment.ProcessorCount;
                 }
                 logger.WriteInfo("Initializing " + threadCount + " threads");
 
-                this.clientHandlerThreads = new Thread[threadCount];
-                this.threadStats = new ThreadStats[threadCount];
+                clientHandlerThreads = new Thread[threadCount];
+                threadStats = new ThreadStats[threadCount];
 
                 // Create Lists for waiting threads
-                this.waitingThreads = new List<ClientHandler>[threadCount];
+                waitingThreads = new List<ClientHandler>[threadCount];
                 for (int i = 0; i < waitingThreads.Length; i++)
                 {
                     waitingThreads[i] = new List<ClientHandler>();
@@ -105,7 +106,7 @@ namespace ChatThreadTest
             }
             finally
             {
-                this.maximumClientsPerThread = maximumClients / threadCount;
+                maximumClientsPerThread = maximumClients / threadCount;
                 logger.WriteDebug("Maximum Client Count : " + maximumClients + ", Maximum clients per thread : " + maximumClientsPerThread + ", enforce level : " + enforceLevel.ToString());
             }
 
@@ -120,7 +121,7 @@ namespace ChatThreadTest
             logger.WriteDebug("Initializing Client Handler Threads");
             for (int i = 0; i < clientHandlerThreads.Length; i++)
             {
-                threadStats[i] = new ThreadStats(i+"", i);
+                threadStats[i] = new ThreadStats(i + "", i);
                 ClientHandlerThread clientHandlerThread = new(this, threadStats[i]);
                 clientHandlerThreads[i] = new Thread(clientHandlerThread.Start);
             }
@@ -152,16 +153,16 @@ namespace ChatThreadTest
                 {
                     if (
                          // Thread is handling less clients than maximum
-                         (threadStats[i].numberOfHandlers < maximumClientsPerThread) ||
+                         threadStats[i].numberOfHandlers < maximumClientsPerThread ||
                          // Enforcing is disabled
-                         (enforceLevel == EnforceLevel.NONE) || 
+                         enforceLevel == EnforceLevel.NONE ||
                          // Enforce is LIGHT && Execution Time is lower than target && Average Execution time is lower than target
-                         ((enforceLevel == EnforceLevel.LIGHT) && (threadStats[i].averageExecutionTime < targetMillisecondsMinimum) && (threadStats[i].averageExecutionTime < targetMillisecondsMinimum ))
+                         enforceLevel == EnforceLevel.LIGHT && threadStats[i].averageExecutionTime < targetMillisecondsMinimum && threadStats[i].averageExecutionTime < targetMillisecondsMinimum
                        )
                     {
                         if (
-                            (threadStats[i].viability > highestViability) && 
-                            ((threadStats[i].averageExecutionTime < targetMillisecondsMaximum) || (threadStats[i].executionTime < targetMillisecondsMaximum))
+                            threadStats[i].viability > highestViability &&
+                            (threadStats[i].averageExecutionTime < targetMillisecondsMaximum || threadStats[i].executionTime < targetMillisecondsMaximum)
                            )
                         {
                             highestViability = threadStats[i].viability;
@@ -172,7 +173,8 @@ namespace ChatThreadTest
                 }
             }
 
-            if(threadID != int.MaxValue){
+            if (threadID != int.MaxValue)
+            {
                 lock (waitingThreads[threadID])
                 {
                     waitingThreads[threadID].Add(new ClientHandler(client, server));

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-namespace ChatThreadTest.Cryptography
+namespace SharpChatServer.Cryptography
 {
     public static class RSA
     {
