@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,7 +23,7 @@ namespace SharpChatClient
         {
             var bytesToEncrypt = Encoding.UTF8.GetBytes(textToEncrypt);
 
-            using (var rsa = new RSACryptoServiceProvider(2048))
+            using (var rsa = new RSACryptoServiceProvider(16384))
             {
                 rsa.FromXmlString(publicKeyString.ToString());
                 var encryptedData = rsa.Encrypt(bytesToEncrypt, true);

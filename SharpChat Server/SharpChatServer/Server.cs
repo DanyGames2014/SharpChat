@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Configuration;
 
-namespace ChatThreadTest
+namespace SharpChatServer
 {
-    internal class Server
+    public class Server
     {
         // Thread Management
         public ThreadManager threadManager;
@@ -84,9 +84,9 @@ namespace ChatThreadTest
             logger.WriteInfo("Server Started");
             logger.WriteDebug("Main Server Thread running on Thread " + Thread.CurrentThread.Name + " with ID " + Thread.CurrentThread.ManagedThreadId);
 
-            Thread temp = new(threadManager.runConsole);
-            temp.Start();
-            
+            //Thread temp = new(threadManager.runConsole);
+            //temp.Start();
+
 
             while (true)
             {

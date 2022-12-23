@@ -1,4 +1,4 @@
-﻿using ChatThreadTest.Networking;
+﻿using SharpChatServer.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,90 +7,278 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace ChatThreadTest.Cryptography
+namespace SharpChatServer.Cryptography
 {
-    internal class EncryptionProvider
+    public class EncryptionProvider
     {
         RSACryptoServiceProvider cryptoServiceProvider;
 
-        ClientHandler clientHandler;
+        ClientHandler client;
 
-        string ServerPrivateKey;
-        public string ServerPublicKey;
-        public string ClientPublicKey;
+        public string LocalPrivateKey;
+        public string LocalPublicKey;
+        public string RemotePublicKey;
 
         public EncryptionMethod encryptionMethod;
 
-        public EncryptionProvider(EncryptionMethod encryptionMethod, ClientHandler clientHandler)
+        public EncryptionProvider(ClientHandler client)
         {
-            this.encryptionMethod = encryptionMethod;
-
-            this.clientHandler = clientHandler;
+            this.client = client;
 
             cryptoServiceProvider = new RSACryptoServiceProvider(2048);
-            ServerPrivateKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(true));
-            ServerPublicKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(false));
+            LocalPrivateKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(true));
+            LocalPublicKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(false));
+            RemotePublicKey = string.Empty;
         }
 
-        public string Encrypt(Packet packet)
+        public Packet Encrypt(Packet packet)
         {
-            switch(encryptionMethod)
+            switch (packet.packetType)
             {
-                case EncryptionMethod.NONE:
-                    return "<"+packet.sender+"> " + packet.message;
+                case PacketType.UNKNOWN:
+                    goto default;
 
-                case EncryptionMethod.RSA:
-                    string messageRSA = packet.message;
-                    packet.message = RSA.EncryptRSA(messageRSA, ClientPublicKey);
-                    return packet.Serialize();
+                case PacketType.PUBLIC_KEY_REQUEST:
+                    goto default;
 
-                case EncryptionMethod.VERNAM:
-                    string messageVER = packet.message;
-                    var verMessage = Vernam.VernamCipher(messageVER);
-                    packet.message = verMessage.Value;
-                    packet.key = verMessage.Key;
-                    return packet.Serialize();
+                case PacketType.PUBLIC_KEY:
+                    goto default;
 
-                case EncryptionMethod.VERNAM_RSA:
-                    string messageVERRSA = packet.message;
-                    var verrsaMessage = Vernam.VernamCipher(messageVERRSA);
-                    packet.message = verrsaMessage.Value;
-                    packet.key = RSA.EncryptRSA(verrsaMessage.Key, ClientPublicKey);
-                    return packet.Serialize();
+                case PacketType.REQUEST_AUTH:
+                    goto default;
+
+                case PacketType.AUTH:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("username", RSA.EncryptRSA(packet.getData("username"), RemotePublicKey), true);
+                            packet.addData("password", RSA.EncryptRSA(packet.getData("password"), RemotePublicKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                string username = temp.getData("username");
+                                string password = temp.getData("password");
+                                KeyValuePair<string, string> username_cipher = Vernam.VernamCipher(username);
+                                KeyValuePair<string, string> password_cipher = Vernam.VernamCipher(password);
+                                packet.addData("username", username_cipher.Value, true);
+                                packet.addData("username_key", username_cipher.Key, true);
+                                packet.addData("password", password_cipher.Value, true);
+                                packet.addData("password_key", password_cipher.Key, true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                string username = temp.getData("username");
+                                string password = temp.getData("password");
+                                KeyValuePair<string, string> username_cipher = Vernam.VernamCipher(username);
+                                KeyValuePair<string, string> password_cipher = Vernam.VernamCipher(password);
+                                packet.addData("username", username_cipher.Value, true);
+                                packet.addData("username_key", RSA.EncryptRSA(username_cipher.Key, RemotePublicKey), true);
+                                packet.addData("password", password_cipher.Value, true);
+                                packet.addData("password_key", RSA.EncryptRSA(password_cipher.Key, RemotePublicKey), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                case PacketType.AUTH_RESULT:
+                    goto default;
+
+                case PacketType.CHAT_WELCOME:
+                    goto default;
+
+                case PacketType.GET_MESSAGE_SINCE:
+                    goto default;
+
+                case PacketType.MESSAGE:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("message", RSA.EncryptRSA(packet.getData("message"), RemotePublicKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                string message = temp.getData("message");
+                                KeyValuePair<string, string> message_cipher = Vernam.VernamCipher(message);
+                                packet.addData("message", message_cipher.Value, true);
+                                packet.addData("message_key", message_cipher.Key, true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                string message = temp.getData("message");
+                                KeyValuePair<string, string> message_cipher = Vernam.VernamCipher(message);
+                                packet.addData("message", message_cipher.Value, true);
+                                packet.addData("message_key", RSA.EncryptRSA(message_cipher.Key, RemotePublicKey), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                case PacketType.COMMAND:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("command", RSA.EncryptRSA(packet.getData("command"), RemotePublicKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                string command = temp.getData("command");
+                                KeyValuePair<string, string> command_cipher = Vernam.VernamCipher(command);
+                                packet.addData("command", command_cipher.Value, true);
+                                packet.addData("command_key", command_cipher.Key, true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                string command = temp.getData("command");
+                                KeyValuePair<string, string> command_cipher = Vernam.VernamCipher(command);
+                                packet.addData("command", command_cipher.Value, true);
+                                packet.addData("command_key", RSA.EncryptRSA(command_cipher.Key, RemotePublicKey), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                default:
+                    return packet;
             }
 
-            return "";
+            return packet;
         }
 
-        public Packet Decrypt(string toDecrypt)
+        public Packet Decrypt(Packet packet)
         {
-            switch (encryptionMethod)
+            switch (packet.packetType)
             {
-                case EncryptionMethod.NONE:
-                    Packet Packet_NONE = new Packet(PacketType.MESSAGE, clientHandler.username, toDecrypt, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-                    return Packet_NONE;
+                case PacketType.UNKNOWN:
+                    goto default;
 
-                case EncryptionMethod.RSA:
-                    Packet Packet_RSA = JsonSerializer.Deserialize<Packet>(toDecrypt);
-                    string Packet_RSA_Message = RSA.DecryptRSA(Packet_RSA.message, ServerPrivateKey);
-                    Packet_RSA.sender = Packet_RSA_Message;
-                    return Packet_RSA;
+                case PacketType.PUBLIC_KEY_REQUEST:
+                    goto default;
 
-                case EncryptionMethod.VERNAM:
-                    Packet Packet_VERNAM = JsonSerializer.Deserialize<Packet>(toDecrypt);
-                    string Packet_VERNAM_Message = Vernam.VernamDecipher(new KeyValuePair<string, string>(Packet_VERNAM.key,Packet_VERNAM.message));
-                    Packet_VERNAM.message = Packet_VERNAM_Message;
-                    return Packet_VERNAM;
+                case PacketType.PUBLIC_KEY:
+                    goto default;
 
-                case EncryptionMethod.VERNAM_RSA:
-                    Packet Packet_VERNAM_RSA = JsonSerializer.Deserialize<Packet>(toDecrypt);
-                    string Packet_VERNAM_RSA_Key = RSA.DecryptRSA(Packet_VERNAM_RSA.key,ServerPrivateKey);
-                    string Packet_VERNAM_RSA_Message = Vernam.VernamDecipher(new KeyValuePair<string, string>(Packet_VERNAM_RSA_Key,Packet_VERNAM_RSA.message));
-                    Packet_VERNAM_RSA.message = Packet_VERNAM_RSA_Message;
-                    return Packet_VERNAM_RSA;
+                case PacketType.REQUEST_AUTH:
+                    goto default;
+
+                case PacketType.AUTH:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("username", RSA.DecryptRSA(packet.getData("username"), LocalPrivateKey), true);
+                            packet.addData("password", RSA.DecryptRSA(packet.getData("password"), LocalPrivateKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                packet.addData("username", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("username_key"), "username")), true);
+                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("password_key"), "password")), true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                packet.addData("username", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("username_key"), LocalPrivateKey), "username")), true);
+                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("password_key"), LocalPrivateKey), "password")), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                case PacketType.AUTH_RESULT:
+                    goto default;
+
+                case PacketType.CHAT_WELCOME:
+                    goto default;
+
+                case PacketType.GET_MESSAGE_SINCE:
+                    goto default;
+
+                case PacketType.MESSAGE:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("message", RSA.DecryptRSA(packet.getData("message"), LocalPrivateKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("message_key"), "message")), true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("message_key"), LocalPrivateKey), "message")), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                case PacketType.COMMAND:
+                    switch (encryptionMethod)
+                    {
+                        case EncryptionMethod.NONE:
+                            return packet;
+
+                        case EncryptionMethod.RSA:
+                            packet.addData("command", RSA.DecryptRSA(packet.getData("command"), LocalPrivateKey), true);
+                            return packet;
+
+                        case EncryptionMethod.VERNAM:
+                            using (var temp = packet)
+                            {
+                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("command_key"), "command")), true);
+                                return packet;
+                            }
+
+                        case EncryptionMethod.VERNAM_RSA:
+                            using (var temp = packet)
+                            {
+                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("command_key"), LocalPrivateKey), "command")), true);
+                                return packet;
+                            }
+                    }
+                    break;
+
+                default:
+                    return packet;
             }
 
-            throw new ArgumentOutOfRangeException();
+            return packet;
         }
     }
 }

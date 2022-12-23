@@ -1,22 +1,36 @@
 ﻿using System.Text.Json;
 
-namespace ChatThreadTest.Networking
+namespace SharpChatServer.Networking
 {
     public class Packet : IDisposable
     {
         public PacketType packetType { get; set; }
-        public string message { get; set; }
-        public string sender { get; set; }
-        public long unixTimestamp { get; set; }
-        public string key { get; set; }
+        public Dictionary<string, string> data { get; set; }
 
-        public Packet(PacketType packetType, string sender, string message, long unixTimestamp, string key="")
+        public Packet(PacketType packetType)
         {
             this.packetType = packetType;
-            this.message = message;
-            this.sender = sender;
-            this.unixTimestamp = unixTimestamp;
-            this.key = key;
+            data = new Dictionary<string, string>();
+        }
+
+        public void addData(string key, string value, bool replace = false)
+        {
+            if (data.ContainsKey(key))
+            {
+                if (replace)
+                {
+                    data[key] = value;
+                }
+            }
+            else
+            {
+                data.Add(key: key, value: value);
+            }
+        }
+
+        public string getData(string key)
+        {
+            return data[key: key];
         }
 
         public string Serialize()
@@ -48,7 +62,7 @@ namespace ChatThreadTest.Networking
             }
             catch (Exception)
             {
-                throw;
+                return new Packet(PacketType.UNKNOWN);
             }
         }
 
