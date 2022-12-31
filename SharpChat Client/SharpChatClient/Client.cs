@@ -30,17 +30,22 @@ namespace SharpChatClient
 
         // Cryptography
         EncryptionProvider encryptionProvider;
-        EncryptionMethod encryptionMethod;
+        public EncryptionMethod encryptionMethod;
+
+        // User Input
+        Thread userInput;
 
         public Client()
         {
-            encryptionMethod = EncryptionMethod.RSA;
+            encryptionMethod = EncryptionMethod.VERNAM;
 
             encryptionProvider = new(this);
 
             state = ConnectionState.HANDSHAKE;
 
             messageBuffer = new List<Packet>();
+
+            userInput = new Thread(ConsoleHandler);
         }
 
         public void Send(Packet packet)
@@ -56,10 +61,25 @@ namespace SharpChatClient
             {
                 foreach (var item in messageBuffer)
                 {
+                    //Console.WriteLine("SENT : " + item.Serialize());
                     sw.WriteLine(item.Serialize());
                     sw.Flush();
                 }
                 messageBuffer.Clear();
+            }
+        }
+
+        public void ConsoleHandler()
+        {
+            while (run)
+            {
+                string msg = Console.ReadLine()+"";
+                Packet packet = new Packet(PacketType.MESSAGE);
+                packet.addData("message", msg);
+                packet.addData("senderName", username);
+                packet.addData("timestamp", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()+"");
+                encryptionProvider.Encrypt(packet);
+                Send(packet);
             }
         }
 
@@ -83,6 +103,7 @@ namespace SharpChatClient
                             {
                                 // Read the message
                                 var message = sr.ReadLine();
+                                //Console.WriteLine("RECEIVED : " + message);
                                 Packet packet;
 
                                 // Try to parse the message as a Serialized Packet
@@ -128,19 +149,21 @@ namespace SharpChatClient
                                                 tempPacket.addData("timestamp", "0");
                                                 Console.WriteLine(packet.getData("motd"));
                                                 Send(tempPacket);
+                                                userInput.Start();
                                             }
                                             break;
 
                                         case PacketType.MESSAGE:
                                             using (var tempPacket = encryptionProvider.Decrypt(packet))
                                             {
-                                                Console.WriteLine(tempPacket.getData("message"));
+                                                Console.WriteLine("<{0}> {1}", tempPacket.getData("senderName"), tempPacket.getData("message"));
                                             }
                                             break;
                                     }
                                 }
                                 catch (Exception)
                                 {
+                                    throw;
                                     // If the parsing fails, it is probably a plain text message meant for dumb terminals, we ignore that.
                                 }
                             }

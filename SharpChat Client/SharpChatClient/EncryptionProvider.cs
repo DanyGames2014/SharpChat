@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography;
 
 namespace SharpChatClient
 {
@@ -19,8 +12,6 @@ namespace SharpChatClient
         public string LocalPublicKey;
         public string RemotePublicKey;
 
-        public EncryptionMethod encryptionMethod;
-
         public EncryptionProvider(Client client)
         {
             this.client = client;
@@ -28,6 +19,7 @@ namespace SharpChatClient
             cryptoServiceProvider = new RSACryptoServiceProvider(2048);
             LocalPrivateKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(true));
             LocalPublicKey = RSA.GetKeyString(cryptoServiceProvider.ExportParameters(false));
+            RemotePublicKey = string.Empty;
         }
 
         public Packet Encrypt(Packet packet)
@@ -47,7 +39,7 @@ namespace SharpChatClient
                     goto default;
 
                 case PacketType.AUTH:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -58,16 +50,16 @@ namespace SharpChatClient
                             return packet;
 
                         case EncryptionMethod.VERNAM:
-                            using(var temp = packet)
+                            using (var temp = packet)
                             {
                                 string username = temp.getData("username");
                                 string password = temp.getData("password");
                                 KeyValuePair<string, string> username_cipher = Vernam.VernamCipher(username);
                                 KeyValuePair<string, string> password_cipher = Vernam.VernamCipher(password);
-                                packet.addData("username", username_cipher.Value, true);
-                                packet.addData("username_key", username_cipher.Key, true);
-                                packet.addData("password", password_cipher.Value, true);
-                                packet.addData("password_key", password_cipher.Key, true);
+                                packet.addData("username", Base64.Encode(username_cipher.Value), true);
+                                packet.addData("username_key", Base64.Encode(username_cipher.Key), true);
+                                packet.addData("password", Base64.Encode(password_cipher.Value), true);
+                                packet.addData("password_key", Base64.Encode(password_cipher.Key), true);
                                 return packet;
                             }
 
@@ -78,9 +70,9 @@ namespace SharpChatClient
                                 string password = temp.getData("password");
                                 KeyValuePair<string, string> username_cipher = Vernam.VernamCipher(username);
                                 KeyValuePair<string, string> password_cipher = Vernam.VernamCipher(password);
-                                packet.addData("username", username_cipher.Value, true);
-                                packet.addData("username_key", RSA.EncryptRSA(username_cipher.Key,RemotePublicKey), true);
-                                packet.addData("password", password_cipher.Value, true);
+                                packet.addData("username", Base64.Encode(username_cipher.Value), true);
+                                packet.addData("username_key", RSA.EncryptRSA(username_cipher.Key, RemotePublicKey), true);
+                                packet.addData("password", Base64.Encode(password_cipher.Value), true);
                                 packet.addData("password_key", RSA.EncryptRSA(password_cipher.Key, RemotePublicKey), true);
                                 return packet;
                             }
@@ -97,7 +89,7 @@ namespace SharpChatClient
                     goto default;
 
                 case PacketType.MESSAGE:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -111,8 +103,8 @@ namespace SharpChatClient
                             {
                                 string message = temp.getData("message");
                                 KeyValuePair<string, string> message_cipher = Vernam.VernamCipher(message);
-                                packet.addData("message", message_cipher.Value, true);
-                                packet.addData("message_key", message_cipher.Key, true);
+                                packet.addData("message", Base64.Encode(message_cipher.Value), true);
+                                packet.addData("message_key", Base64.Encode(message_cipher.Key), true);
                                 return packet;
                             }
 
@@ -121,7 +113,7 @@ namespace SharpChatClient
                             {
                                 string message = temp.getData("message");
                                 KeyValuePair<string, string> message_cipher = Vernam.VernamCipher(message);
-                                packet.addData("message", message_cipher.Value, true);
+                                packet.addData("message", Base64.Encode(message_cipher.Value), true);
                                 packet.addData("message_key", RSA.EncryptRSA(message_cipher.Key, RemotePublicKey), true);
                                 return packet;
                             }
@@ -129,7 +121,7 @@ namespace SharpChatClient
                     break;
 
                 case PacketType.COMMAND:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -143,8 +135,8 @@ namespace SharpChatClient
                             {
                                 string command = temp.getData("command");
                                 KeyValuePair<string, string> command_cipher = Vernam.VernamCipher(command);
-                                packet.addData("command", command_cipher.Value, true);
-                                packet.addData("command_key", command_cipher.Key, true);
+                                packet.addData("command", Base64.Encode(command_cipher.Value), true);
+                                packet.addData("command_key", Base64.Encode(command_cipher.Key), true);
                                 return packet;
                             }
 
@@ -153,7 +145,7 @@ namespace SharpChatClient
                             {
                                 string command = temp.getData("command");
                                 KeyValuePair<string, string> command_cipher = Vernam.VernamCipher(command);
-                                packet.addData("command", command_cipher.Value, true);
+                                packet.addData("command", Base64.Encode(command_cipher.Value), true);
                                 packet.addData("command_key", RSA.EncryptRSA(command_cipher.Key, RemotePublicKey), true);
                                 return packet;
                             }
@@ -184,7 +176,7 @@ namespace SharpChatClient
                     goto default;
 
                 case PacketType.AUTH:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -197,16 +189,16 @@ namespace SharpChatClient
                         case EncryptionMethod.VERNAM:
                             using (var temp = packet)
                             {
-                                packet.addData("username",Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("username_key"), ("username"))),true);
-                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("password_key"), ("password"))), true);
+                                packet.addData("username", Vernam.VernamDecipher(new KeyValuePair<string, string>(Base64.Decode(packet.getData("username_key")), Base64.Decode(packet.getData("username")))), true);
+                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(Base64.Decode(packet.getData("password_key")), Base64.Decode(packet.getData("password")))), true);
                                 return packet;
                             }
 
                         case EncryptionMethod.VERNAM_RSA:
                             using (var temp = packet)
                             {
-                                packet.addData("username", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("username_key"),LocalPrivateKey), ("username"))), true);
-                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("password_key"), LocalPrivateKey), ("password"))), true);
+                                packet.addData("username", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("username_key"), LocalPrivateKey), Base64.Decode(packet.getData("username")))), true);
+                                packet.addData("password", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("password_key"), LocalPrivateKey), Base64.Decode(packet.getData("password")))), true);
                                 return packet;
                             }
                     }
@@ -222,7 +214,7 @@ namespace SharpChatClient
                     goto default;
 
                 case PacketType.MESSAGE:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -234,21 +226,21 @@ namespace SharpChatClient
                         case EncryptionMethod.VERNAM:
                             using (var temp = packet)
                             {
-                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("message_key"), ("message"))), true);
+                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(Base64.Decode(packet.getData("message_key")), Base64.Decode(packet.getData("message")))), true);
                                 return packet;
                             }
 
                         case EncryptionMethod.VERNAM_RSA:
                             using (var temp = packet)
                             {
-                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("message_key"), LocalPrivateKey), ("message"))), true);
+                                packet.addData("message", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("message_key"), LocalPrivateKey), Base64.Decode(packet.getData("message")))), true);
                                 return packet;
                             }
                     }
                     break;
 
                 case PacketType.COMMAND:
-                    switch (encryptionMethod)
+                    switch (client.encryptionMethod)
                     {
                         case EncryptionMethod.NONE:
                             return packet;
@@ -260,14 +252,14 @@ namespace SharpChatClient
                         case EncryptionMethod.VERNAM:
                             using (var temp = packet)
                             {
-                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(packet.getData("command_key"), ("command"))), true);
+                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(Base64.Decode(packet.getData("command_key")), Base64.Decode(packet.getData("command")))), true);
                                 return packet;
                             }
 
                         case EncryptionMethod.VERNAM_RSA:
                             using (var temp = packet)
                             {
-                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("command_key"), LocalPrivateKey), ("command"))), true);
+                                packet.addData("command", Vernam.VernamDecipher(new KeyValuePair<string, string>(RSA.DecryptRSA(packet.getData("command_key"), LocalPrivateKey), Base64.Decode(packet.getData("command")))), true);
                                 return packet;
                             }
                     }

@@ -4,9 +4,10 @@ namespace SharpChatServer
 {
     public enum LogLevel
     {
+        NET_DEBUG = -1,
         DEBUG = 0,
         INFO = 1,
-        WARNING = 2,
+        WARN = 2,
         ERROR = 3,
         FATAL = 4,
     }
@@ -123,7 +124,7 @@ namespace SharpChatServer
         /// <param name="warn_message">Message to log</param>
         public void WriteWarn(string warn_message)
         {
-            WriteLine(warn_message, LogLevel.WARNING);
+            WriteLine(warn_message, LogLevel.WARN);
         }
 
         // --- ERROR ---
@@ -192,50 +193,32 @@ namespace SharpChatServer
         /// <param name="level">Level</param>
         public void WriteLine(string message, LogLevel level)
         {
-            string logmsg = string.Empty;
-
             // Log Into Terminal
             switch (level)
             {
+                case LogLevel.NET_DEBUG:
+                    WriteLine(message, LogLevel.NET_DEBUG, ConsoleColor.Cyan); 
+                    break;
+
                 case LogLevel.DEBUG:
-                    logmsg += "[DEBUG] ";
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    WriteLine(message, LogLevel.DEBUG, ConsoleColor.Gray);
                     break;
 
                 case LogLevel.INFO:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    logmsg += "[INFO] ";
+                    WriteLine(message, LogLevel.INFO, ConsoleColor.White);
                     break;
 
-                case LogLevel.WARNING:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    logmsg += "[WARN] ";
+                case LogLevel.WARN:
+                    WriteLine(message, LogLevel.WARN, ConsoleColor.Yellow);
                     break;
 
                 case LogLevel.ERROR:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    logmsg += "[ERROR] ";
+                    WriteLine(message, LogLevel.ERROR, ConsoleColor.Red);
                     break;
 
                 case LogLevel.FATAL:
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    logmsg += "[FATAL] ";
+                    WriteLine(message, LogLevel.FATAL, ConsoleColor.DarkRed);
                     break;
-            }
-            logmsg += message;
-            if (level >= ConsoleLogLevel)
-            {
-                Console.WriteLine(logmsg);
-            }
-            Console.ForegroundColor = ConsoleColor.White;
-
-            // Log Into Log File
-            if (log && sw != null)
-            {
-                if (level >= FileLogLevel)
-                {
-                    sw.WriteLine(logmsg);
-                }
             }
         }
 
@@ -251,29 +234,7 @@ namespace SharpChatServer
 
             // Log Into Terminal
             Console.ForegroundColor = consoleColor;
-            switch (level)
-            {
-                case LogLevel.DEBUG:
-                    logmsg += "[DEBUG] ";
-                    break;
-
-                case LogLevel.INFO:
-                    logmsg += "[INFO] ";
-                    break;
-
-                case LogLevel.WARNING:
-                    logmsg += "[WARN] ";
-                    break;
-
-                case LogLevel.ERROR:
-                    logmsg += "[ERROR] ";
-                    break;
-
-                case LogLevel.FATAL:
-                    logmsg += "[FATAL] ";
-                    break;
-            }
-
+            logmsg += "["+level.ToString()+"] ";
             logmsg += message;
             if (level >= ConsoleLogLevel)
             {
