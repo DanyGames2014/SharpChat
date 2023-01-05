@@ -18,6 +18,8 @@ namespace SharpChatClient
         StreamReader sr;
         StreamWriter sw;
         List<Packet> messageBuffer;
+        public string serverAddress;
+        public int serverPort;
 
         // State
         ConnectionState state;
@@ -25,8 +27,8 @@ namespace SharpChatClient
         bool auth = false;
 
         // User Details
-        public string username = "pablo";
-        string password = "pablo";
+        public string username;
+        public string password;
 
         // Cryptography
         EncryptionProvider encryptionProvider;
@@ -198,7 +200,7 @@ namespace SharpChatClient
             try
             {
                 tcpClient = new();
-                tcpClient.Connect("127.0.0.1", 65525);
+                tcpClient.Connect(serverAddress, serverPort);
                 ns = tcpClient.GetStream();
                 sw = new StreamWriter(ns);
                 sr = new StreamReader(ns);

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SharpChatClient  klient1": {
+      "commandName": "Project",
+      "commandLineArgs": "-a 127.0.0.1 -p 65525 -u klient1 -pass hel"
+    },
+    "klient2": {
+      "commandName": "Project",
+      "commandLineArgs": "-a 127.0.0.1 -p 65525 -u klient2 -pass hel"
+    }
+  }
+}
