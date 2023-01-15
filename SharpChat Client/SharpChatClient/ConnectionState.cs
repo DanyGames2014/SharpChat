@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharpChatClient
 {
+    /// <summary>
+    /// Represents the current state of the connection
+    /// </summary>
     public enum ConnectionState
     {
         UNKNOWN = 0,

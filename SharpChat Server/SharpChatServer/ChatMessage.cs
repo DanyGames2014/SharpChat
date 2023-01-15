@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharpChatServer
 {
+    /// <summary>
+    /// Represents a single message in the chat manager
+    /// </summary>
     public struct ChatMessage
     {
         public string senderName { get; set; }

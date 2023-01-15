@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharpChatServer.Cryptography
 {
+    /// <summary>
+    /// Enum to list avalible encryption methods
+    /// </summary>
     public enum EncryptionMethod
     {
         NONE = 0,

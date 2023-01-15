@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharpChatServer.Networking
 {
+    /// <summary>
+    /// Represents a connection state for clients support advanced features and encryption
+    /// </summary>
     public enum ConnectionState
     {
         UNKNOWN = 0,
@@ -14,6 +17,9 @@ namespace SharpChatServer.Networking
         CONNECTED = 3
     }
 
+    /// <summary>
+    /// Represents a connection state for legacy clients connecting in a dumb terminal mode
+    /// </summary>
     public enum LegacyConnectionState
     {
         LOGIN_ASK_USERNAME = 1,

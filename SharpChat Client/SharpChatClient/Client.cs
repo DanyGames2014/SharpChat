@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.Json;
+﻿using System.Net.Sockets;
 
 namespace SharpChatClient
 {
@@ -25,6 +17,7 @@ namespace SharpChatClient
         ConnectionState state;
         bool run = true;
         bool auth = false;
+        bool reauth = false;
 
         // User Details
         public string username;
@@ -37,7 +30,7 @@ namespace SharpChatClient
         // User Input
         Thread userInput;
 
-        public Client()
+        public Client(string username = "default", string password = "default", string hostname = "127.0.0.1", int serverPort = 65525)
         {
             encryptionMethod = EncryptionMethod.VERNAM;
 
@@ -48,6 +41,19 @@ namespace SharpChatClient
             messageBuffer = new List<Packet>();
 
             userInput = new Thread(ConsoleHandler);
+
+            this.username = username;
+            this.password = password;
+            this.serverAddress = hostname;
+            try
+            {
+                this.serverPort = Convert.ToInt32(serverPort);
+            }
+            catch (Exception)
+            {
+                Console.Error.WriteLine("Invalid Port");
+                Environment.Exit(1);
+            }
         }
 
         public void Send(Packet packet)
@@ -142,6 +148,7 @@ namespace SharpChatClient
                                             {
                                                 var result = Convert.ToBoolean(packet.getData("result"));
                                                 auth = result;
+                                                reauth = result;
                                             }
                                             break;
 
@@ -165,7 +172,6 @@ namespace SharpChatClient
                                 }
                                 catch (Exception)
                                 {
-                                    throw;
                                     // If the parsing fails, it is probably a plain text message meant for dumb terminals, we ignore that.
                                 }
                             }
@@ -178,6 +184,7 @@ namespace SharpChatClient
                 }
                 catch (IOException ex)
                 {
+                    reauth = true;
                     while (!tcpClient.Connected)
                     {
                         Console.WriteLine("Connection Fail, Retrying");

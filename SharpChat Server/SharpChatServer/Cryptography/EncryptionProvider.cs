@@ -4,6 +4,9 @@ using SharpChatServer.Utilities;
 
 namespace SharpChatServer.Cryptography
 {
+    /// <summary>
+    /// Class to handle encrpytion and decryption of packets, based on the passed in Client refereńce, it will use the encryption method specified by client
+    /// </summary>
     public class EncryptionProvider
     {
         RSACryptoServiceProvider cryptoServiceProvider;
@@ -14,6 +17,10 @@ namespace SharpChatServer.Cryptography
         public string LocalPublicKey;
         public string RemotePublicKey;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="client">Reference to client that the encryption will be provided to</param>
         public EncryptionProvider(ClientHandler client)
         {
             this.client = client;
@@ -24,6 +31,11 @@ namespace SharpChatServer.Cryptography
             RemotePublicKey = string.Empty;
         }
 
+        /// <summary>
+        /// Encrypt a packet
+        /// </summary>
+        /// <param name="packet">Packet to encrypt</param>
+        /// <returns>Encrypted Packet</returns>
         public Packet Encrypt(Packet packet)
         {
             switch (packet.packetType)
@@ -161,6 +173,11 @@ namespace SharpChatServer.Cryptography
             return packet;
         }
 
+        /// <summary>
+        /// Decrypt a packet
+        /// </summary>
+        /// <param name="packet">Packet to decrypt</param>
+        /// <returns>Decrypted Packet</returns>
         public Packet Decrypt(Packet packet)
         {
             switch (packet.packetType)

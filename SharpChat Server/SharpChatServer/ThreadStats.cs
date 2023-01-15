@@ -1,5 +1,8 @@
 ﻿namespace SharpChatServer
 {
+    /// <summary>
+    /// Thread statistics, used for monitoring and calculating thread load
+    /// </summary>
     public class ThreadStats
     {
         public long executionTime { get; set; }
@@ -12,6 +15,11 @@
         public float viability { get; set; }
         public int threadID { get; set; }
 
+        /// <summary>
+        /// Initiliazed the thread with a name and id
+        /// </summary>
+        /// <param name="threadName">name for the thread</param>
+        /// <param name="threadID">id of the thread</param>
         public ThreadStats(string threadName, int threadID)
         {
             this.threadName = threadName;
@@ -23,6 +31,9 @@
             this.threadID = threadID;
         }
 
+        /// <summary>
+        /// Human readable representaion of the statistics
+        /// </summary>
         public override string? ToString()
         {
             return

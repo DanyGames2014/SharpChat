@@ -3,6 +3,9 @@ using System.Net.Sockets;
 
 namespace SharpChatServer
 {
+    /// <summary>
+    /// Level on which to enforce the client limits
+    /// </summary>
     public enum EnforceLevel
     {
         NONE = 0,
@@ -11,6 +14,9 @@ namespace SharpChatServer
         MAXIMUM = 3
     }
 
+    /// <summary>
+    /// Manages all the client handler threads and intelligently assigns new clients based on the current load
+    /// </summary>
     public class ThreadManager
     {
         Server server;

@@ -68,6 +68,9 @@ namespace SharpChatServer
             logger.WriteInfo("Server Initialized Succesfully");
         }
 
+        /// <summary>
+        /// Starts the server on an configured port
+        /// </summary>
         public void Start()
         {
             logger.WriteInfo("Starting Server on port " + tcpPort);

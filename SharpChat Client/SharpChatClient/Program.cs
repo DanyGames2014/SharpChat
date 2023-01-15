@@ -14,56 +14,60 @@
                 Console.WriteLine(" -u | -username <username>    Username to connect with.");
                 Console.WriteLine(" -s | -pass <password>        Password to login with");
             }
-
-            Client client = new Client();
-
-
-            try
+            else
             {
-                for (int i = 0; i < args.Length; i++)
+                Client client = new Client();
+
+
+                try
                 {
-                    if (args[i][0].Equals('-'))
+                    for (int i = 0; i < args.Length; i++)
                     {
-                        switch (args[i].Remove(0, 1))
+                        if (args[i][0].Equals('-'))
                         {
-                            case "a":
-                            case "address":
-                                //Console.WriteLine("ADDRESS : " + args[i + 1]);
-                                client.serverAddress = args[i + 1];
-                                i++;
-                                break;
+                            switch (args[i].Remove(0, 1))
+                            {
+                                case "a":
+                                case "address":
+                                    //Console.WriteLine("ADDRESS : " + args[i + 1]);
+                                    client.serverAddress = args[i + 1];
+                                    i++;
+                                    break;
 
-                            case "p":
-                            case "port":
-                                //Console.WriteLine("PORT : " + args[i + 1]);
-                                client.serverPort = Convert.ToInt32(args[i + 1]);
-                                i++;
-                                break;
+                                case "p":
+                                case "port":
+                                    //Console.WriteLine("PORT : " + args[i + 1]);
+                                    client.serverPort = Convert.ToInt32(args[i + 1]);
+                                    i++;
+                                    break;
 
-                            case "u":
-                            case "username":
-                                //Console.WriteLine("USERNAME : " + args[i + 1]);
-                                client.username = args[i + 1];
-                                i++;
-                                break;
+                                case "u":
+                                case "username":
+                                    //Console.WriteLine("USERNAME : " + args[i + 1]);
+                                    client.username = args[i + 1];
+                                    i++;
+                                    break;
 
-                            case "s":
-                            case "pass":
-                                //Console.WriteLine("PASSWORD : " + args[i + 1]);
-                                client.password = args[i + 1];
-                                i++;
-                                break;
+                                case "s":
+                                case "pass":
+                                    //Console.WriteLine("PASSWORD : " + args[i + 1]);
+                                    client.password = args[i + 1];
+                                    i++;
+                                    break;
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception)
-            {
+                catch (Exception)
+                {
 
-                throw;
+                    throw;
+                }
+
+                client.Run();
+
             }
 
-            client.Run();
 
         }
     }

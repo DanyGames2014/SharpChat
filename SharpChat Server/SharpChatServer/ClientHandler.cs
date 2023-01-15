@@ -46,6 +46,11 @@ namespace SharpChatServer
         public List<string> outgoingBuffer;
         public List<string> incomingBuffer;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="tcpClient">TcpClient to handle</param>
+        /// <param name="server">Reference to the server</param>
         public ClientHandler(TcpClient tcpClient, Server server)
         {
             // Assign References to Server and Logger and chat Manager
@@ -89,18 +94,29 @@ namespace SharpChatServer
             sw.WriteLine("NekoChat/1.0 ("+Environment.OSVersion+")\n");
         }
 
+        /// <summary>
+        /// Adds a packet to the outgoing buffer
+        /// </summary>
+        /// <param name="packet"></param>
         public void Send(Packet packet)
         {
             outgoingBuffer.Add(packet.Serialize());
             SendBuffer();
         }
 
+        /// <summary>
+        /// Adds a string message to the buffer, used for dumb terminals
+        /// </summary>
+        /// <param name="message">string to add</param>
         public void Send(string message)
         {
             outgoingBuffer.Add(message);
             SendBuffer();
         }
 
+        /// <summary>
+        /// Tries to send all messages from the buffer
+        /// </summary>
         public void SendBuffer()
         {
             foreach (var item in outgoingBuffer)
@@ -111,6 +127,9 @@ namespace SharpChatServer
             outgoingBuffer.Clear();
         }
 
+        /// <summary>
+        /// Tries to receive avalible data from the client to the incoming buffer
+        /// </summary>
         public void Receive()
         {
             while(ns.DataAvailable)
@@ -124,6 +143,11 @@ namespace SharpChatServer
             }
         }
 
+        /// <summary>
+        /// Reads data from the incoming buffer
+        /// </summary>
+        /// <param name="destructive">if to delete the data from the buffer after it has been read, defaults to true.</param>
+        /// <returns>Read Data</returns>
         public string ReadBuffer(bool destructive = true)
         {
             logger.WriteDebug("Incoming Buffer Size : " + incomingBuffer.Count);
@@ -142,8 +166,15 @@ namespace SharpChatServer
             }
         }
 
+        /// <summary>
+        /// Returns if there is data avalible to read
+        /// </summary>
+        /// <returns></returns>
         public bool BufferAvalible() => (incomingBuffer.Count > 0);
 
+        /// <summary>
+        /// Cleans the buffer of potentially invalid messages
+        /// </summary>
         public void CleanBuffer()
         {
             for (int i = 0; i < incomingBuffer.Count; i++)
@@ -156,6 +187,9 @@ namespace SharpChatServer
             }
         }
 
+        /// <summary>
+        /// The main method that handles data from client
+        /// </summary>
         public void Run()
         {
             if (timeout.ElapsedMilliseconds < 60000)

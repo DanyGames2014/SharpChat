@@ -2,6 +2,9 @@
 
 namespace SharpChatServer
 {
+    /// <summary>
+    /// Thread handling multiple clients
+    /// </summary>
     internal class ClientHandlerThread
     {
         private List<ClientHandler> clientHandlers;
@@ -12,6 +15,11 @@ namespace SharpChatServer
         private long waitTime;
         private int threadID;
 
+        /// <summary>
+        /// Constructors
+        /// </summary>
+        /// <param name="threadManager">Back Reference to the Thread Manager</param>
+        /// <param name="threadStats">ThreadStats to write statistics to</param>
         public ClientHandlerThread(ThreadManager threadManager, ThreadStats threadStats)
         {
             clientHandlers = new List<ClientHandler>();
@@ -21,6 +29,9 @@ namespace SharpChatServer
             threadID = threadStats.threadID;
         }
 
+        /// <summary>
+        /// Cleans client handlers that have been marked for cleanup
+        /// </summary>
         public void Cleanup()
         {
             lock (clientHandlers)
@@ -36,6 +47,9 @@ namespace SharpChatServer
             }
         }
 
+        /// <summary>
+        /// Starts the client handling
+        /// </summary>
         public void Start()
         {
             while (true)
